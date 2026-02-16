@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:aimoprize.com)",
+      "WebFetch(domain:kaggle.com)",
+      "WebFetch(domain:huggingface.co)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:arxiv.org)",
+      "Bash(kaggle:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(jupyter:*)",
+      "Bash(pytest:*)",
+      "Bash(accelerate:*)",
+      "Bash(wandb:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(unzip:*)",
+      "Bash(tar:*)",
+      "Bash(git:*)",
+      "Bash(nvidia-smi)",
+      "Bash(htop)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)"
+    ]
+  }
+}

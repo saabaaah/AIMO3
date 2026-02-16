@@ -1,0 +1,64 @@
+# Heavy datasets (too large for git)
+*.arrow
+*.parquet
+
+# All large data files
+*.bin
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.onnx
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+
+# Model checkpoints and weights
+checkpoints/
+models/
+*.ckpt
+
+# Nested git repos
+numina-solution/.git/
+
+# PDFs and large docs
+*.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environments
+.env
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Experiment tracking
+wandb/
+tensorboard/
+mlruns/
+outputs/
+logs/
+
+# Cache
+.cache/
+*.cache
+huggingface/
