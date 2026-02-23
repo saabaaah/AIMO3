@@ -27,7 +27,10 @@
       "Bash(mkdir:*)",
       "Bash(cp:*)",
       "Bash(mv:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(head -5 wc -l /Users/tanzeel.shaikh/Source/Projects/AIMO3/data/interim/train/*)",
+      "Bash(system_profiler:*)",
+      "Bash(source:*)"
     ]
   }
 }

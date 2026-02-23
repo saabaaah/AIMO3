@@ -62,3 +62,12 @@ logs/
 .cache/
 *.cache
 huggingface/
+
+
+.aimo3/*
+!.aimo3/results
+!.aimo3/results_7b_4bit_n16_g4
+!.aimo3/results_7b_n16_g4
+.claude/
+data/
+datasets/
