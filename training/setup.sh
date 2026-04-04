@@ -1,20 +1,15 @@
 #!/bin/bash
 # AIMO 3 — Lambda Labs setup script
-# Run once after SSH-ing in:
-#   bash setup.sh
+# Run once: bash setup.sh
 
 set -e
-
 echo "=== AIMO 3 Lambda Setup ==="
 
-# Fix torchvision to match torch version
-pip install --upgrade torchvision
-
-# Install training dependencies
-pip install unsloth
-pip install trl==0.18.1
-pip install vllm
-pip install huggingface_hub
+# Core training stack (no Unsloth — avoids dependency hell)
+pip install --upgrade torch torchvision
+pip install --upgrade transformers accelerate peft bitsandbytes
+pip install --upgrade trl==0.18.1
+pip install --upgrade datasets huggingface_hub Pillow
 
 echo ""
 echo "=== Setup complete! ==="

@@ -1,37 +1,39 @@
 """
-AIMO 3 — Stage 2: GRPO Training
-==================================
+AIMO 3 — Stage 2: GRPO Training (no Unsloth)
+==============================================
 RL fine-tuning using binary math rewards (correct=1, wrong=0).
-Loads from SFT checkpoint, trains on AIME+AMC problems.
+Uses transformers + peft + trl directly.
 
 Usage:
     nohup python grpo_train.py > grpo_train.log 2>&1 &
     tail -f grpo_train.log
 
-Resumes automatically if a checkpoint exists in ./grpo_checkpoint/
+Resumes automatically if a checkpoint exists.
 Requires: ./sft_checkpoint/ from Stage 1
-Output: ./grpo_checkpoint/ (LoRA adapters with RL updates)
+Output: ./grpo_checkpoint/
 Time: ~2-3 hours on A100 40GB
 """
 
 import os
 import torch
 from datasets import load_dataset, concatenate_datasets, Value
-from unsloth import FastLanguageModel
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from peft import PeftModel
 from trl import GRPOConfig, GRPOTrainer
 
 # ============================================
-# CONFIG — edit these if needed
+# CONFIG
 # ============================================
-SFT_CHECKPOINT = "./sft_checkpoint"    # from Stage 1
+SFT_CHECKPOINT = "./sft_checkpoint"
 OUTPUT_DIR = "./grpo_checkpoint"
+BASE_MODEL = "Qwen/Qwen2.5-Math-7B-Instruct"
 MAX_SEQ_LENGTH = 2048
-NUM_GENERATIONS = 8       # solutions per problem
-MAX_COMPLETION = 1024     # tokens per solution (prompt + this < 2048)
-MAX_PROMPT = 512          # truncate long prompts
-BATCH_SIZE = 2            # per device (1 × 2 × 4 = 8 must be divisible by NUM_GENERATIONS)
+NUM_GENERATIONS = 8
+MAX_COMPLETION = 1024
+MAX_PROMPT = 512
+BATCH_SIZE = 2            # 1 × 2 × 4 = 8 divisible by NUM_GENERATIONS=8
 GRAD_ACCUM = 4
-LEARNING_RATE = 5e-6      # 10x lower than SFT for RL stability
+LEARNING_RATE = 5e-6
 NUM_EPOCHS = 3
 SAVE_STEPS = 50
 LOGGING_STEPS = 1
@@ -46,18 +48,33 @@ print(f"VRAM: {torch.cuda.get_device_properties(0).total_mem / 1e9:.1f} GB")
 # LOAD MODEL FROM SFT CHECKPOINT
 # ============================================
 if not os.path.exists(SFT_CHECKPOINT):
-    raise FileNotFoundError(
-        f"SFT checkpoint not found at {SFT_CHECKPOINT}\n"
-        "Run sft_train.py first."
-    )
+    raise FileNotFoundError(f"SFT checkpoint not found at {SFT_CHECKPOINT}\nRun sft_train.py first.")
 
-print(f"\nLoading model from {SFT_CHECKPOINT}...")
-model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name=SFT_CHECKPOINT,
-    max_seq_length=MAX_SEQ_LENGTH,
+print(f"\nLoading base model + SFT LoRA from {SFT_CHECKPOINT}...")
+
+bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
-    dtype=None,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.bfloat16,
+    bnb_4bit_use_double_quant=True,
 )
+
+# Load base model
+base_model = AutoModelForCausalLM.from_pretrained(
+    BASE_MODEL,
+    quantization_config=bnb_config,
+    device_map="auto",
+    torch_dtype=torch.bfloat16,
+    attn_implementation="flash_attention_2",
+)
+
+# Load LoRA adapters on top
+model = PeftModel.from_pretrained(base_model, SFT_CHECKPOINT, is_trainable=True)
+
+tokenizer = AutoTokenizer.from_pretrained(SFT_CHECKPOINT)
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.padding_side = "right"
+
 print(f"Model loaded: {model.num_parameters():,} parameters")
 
 # ============================================
@@ -91,15 +108,9 @@ def normalize_answer(text):
 
 
 def correctness_reward(prompts, completions, answer, **kwargs):
-    """
-    GRPO reward: 1.0 if correct, 0.0 if wrong.
-
-    TRL passes completions as chat message lists:
-      [[{"role": "assistant", "content": "..."}], ...]
-    """
+    """GRPO reward: 1.0 if correct, 0.0 if wrong."""
     rewards = []
     for completion, true_answer in zip(completions, answer):
-        # Extract text from chat message format
         if isinstance(completion, list):
             text = completion[-1]["content"] if completion else ""
         elif isinstance(completion, dict):
@@ -111,8 +122,8 @@ def correctness_reward(prompts, completions, answer, **kwargs):
         normalized = normalize_answer(extracted) if extracted else ""
         is_correct = (normalized == str(true_answer).strip())
         rewards.append(1.0 if is_correct else 0.0)
-
     return rewards
+
 
 # ============================================
 # LOAD & FORMAT GRPO DATA
@@ -124,7 +135,6 @@ print(f"AIME: {len(ds_aime)} problems, AMC: {len(ds_amc)} problems")
 
 
 def make_grpo_prompt(example):
-    """Format a problem as a chat prompt for GRPO."""
     problem = example["problem"]
     prompt_text = (
         "Solve this math problem step by step. "
@@ -141,18 +151,15 @@ def make_grpo_prompt(example):
 
 grpo_aime = ds_aime.map(make_grpo_prompt, remove_columns=ds_aime.column_names)
 grpo_amc = ds_amc.map(make_grpo_prompt, remove_columns=ds_amc.column_names)
-
-# Force matching column types for concatenation
 grpo_aime = grpo_aime.cast_column("answer", Value("string"))
 grpo_amc = grpo_amc.cast_column("answer", Value("string"))
-
 grpo_dataset = concatenate_datasets([grpo_aime, grpo_amc])
 print(f"GRPO dataset: {len(grpo_dataset)} problems × {NUM_GENERATIONS} rollouts = {len(grpo_dataset) * NUM_GENERATIONS} samples/epoch")
 
 # ============================================
 # GRPO TRAINING
 # ============================================
-FastLanguageModel.for_training(model)
+model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
 
 grpo_config = GRPOConfig(
     output_dir=OUTPUT_DIR,
@@ -170,6 +177,8 @@ grpo_config = GRPOConfig(
     save_steps=SAVE_STEPS,
     save_total_limit=2,
     use_vllm=False,
+    gradient_checkpointing=True,
+    gradient_checkpointing_kwargs={"use_reentrant": False},
     seed=42,
 )
 
@@ -181,7 +190,7 @@ grpo_trainer = GRPOTrainer(
     processing_class=tokenizer,
 )
 
-# Auto-resume from checkpoint
+# Auto-resume
 resume = None
 if os.path.exists(OUTPUT_DIR):
     checkpoints = [d for d in os.listdir(OUTPUT_DIR) if d.startswith("checkpoint-")]
@@ -191,9 +200,7 @@ if os.path.exists(OUTPUT_DIR):
         print(f"\n>>> Resuming from {resume}")
 
 print(f"\nStarting GRPO training...")
-print(f"  Problems: {len(grpo_dataset)}")
-print(f"  Generations per problem: {NUM_GENERATIONS}")
-print(f"  Epochs: {NUM_EPOCHS}")
+print(f"  Problems: {len(grpo_dataset)}, Generations: {NUM_GENERATIONS}, Epochs: {NUM_EPOCHS}")
 print(f"  Saving every {SAVE_STEPS} steps to {OUTPUT_DIR}/")
 
 stats = grpo_trainer.train(resume_from_checkpoint=resume)
@@ -203,8 +210,7 @@ print(f"GRPO COMPLETE!")
 print(f"Final loss: {stats.training_loss:.4f}")
 print(f"{'='*50}")
 
-# Save final checkpoint
 model.save_pretrained(OUTPUT_DIR)
 tokenizer.save_pretrained(OUTPUT_DIR)
 print(f"Saved to {OUTPUT_DIR}/")
-print(f"\nNext: run upload_model.py to push to HuggingFace")
+print(f"\nNext: python upload_model.py")

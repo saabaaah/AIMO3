@@ -1,25 +1,27 @@
 """
-AIMO 3 — Stage 1: SFT Training
-================================
-Fine-tune Qwen2.5-Math-7B on NuminaMath-TIR (72K problems with code solutions).
+AIMO 3 — Stage 1: SFT Training (no Unsloth)
+=============================================
+Fine-tune Qwen2.5-Math-7B on NuminaMath-TIR (72K problems).
+Uses transformers + peft + trl directly.
 
 Usage:
     nohup python sft_train.py > sft_train.log 2>&1 &
     tail -f sft_train.log
 
-Resumes automatically if a checkpoint exists in ./sft_checkpoint/
+Resumes automatically if a checkpoint exists.
 Output: ./sft_checkpoint/ (LoRA adapters, ~200MB)
-Time: ~2-3 hours on A100 40GB
+Time: ~3-4 hours on A100 40GB
 """
 
 import os
 import torch
 from datasets import load_dataset
-from unsloth import FastLanguageModel
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from trl import SFTTrainer, SFTConfig
 
 # ============================================
-# CONFIG — edit these if needed
+# CONFIG
 # ============================================
 MODEL_NAME = "Qwen/Qwen2.5-Math-7B-Instruct"
 OUTPUT_DIR = "./sft_checkpoint"
@@ -38,26 +40,44 @@ print(f"GPU: {torch.cuda.get_device_name(0)}")
 print(f"VRAM: {torch.cuda.get_device_properties(0).total_mem / 1e9:.1f} GB")
 
 # ============================================
-# LOAD MODEL + LoRA
+# LOAD MODEL in 4-bit + LoRA
 # ============================================
-print(f"\nLoading {MODEL_NAME}...")
-model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name=MODEL_NAME,
-    max_seq_length=MAX_SEQ_LENGTH,
+print(f"\nLoading {MODEL_NAME} in 4-bit...")
+
+bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
-    dtype=None,  # auto-detect (bf16 on A100/H100)
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.bfloat16,
+    bnb_4bit_use_double_quant=True,
 )
 
-# Add LoRA adapters (Unsloth applies these automatically if not already present)
-model = FastLanguageModel.get_peft_model(
-    model,
-    r=64,                    # LoRA rank — higher = more capacity
-    lora_alpha=16,           # scaling factor
-    lora_dropout=0,          # Unsloth optimized — keep at 0
+model = AutoModelForCausalLM.from_pretrained(
+    MODEL_NAME,
+    quantization_config=bnb_config,
+    device_map="auto",
+    torch_dtype=torch.bfloat16,
+    attn_implementation="flash_attention_2",
+)
+
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.padding_side = "right"
+
+# Prepare for LoRA training
+model = prepare_model_for_kbit_training(model)
+
+lora_config = LoraConfig(
+    r=64,
+    lora_alpha=16,
+    lora_dropout=0.05,
     target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
                     "gate_proj", "up_proj", "down_proj"],
-    use_gradient_checkpointing="unsloth",  # saves 60% more VRAM
+    bias="none",
+    task_type="CAUSAL_LM",
 )
+
+model = get_peft_model(model, lora_config)
+model.gradient_checkpointing_enable()
 
 trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
 total = sum(p.numel() for p in model.parameters())
@@ -70,6 +90,7 @@ print("\nLoading NuminaMath-TIR dataset...")
 ds_tir = load_dataset("AI-MO/NuminaMath-TIR", split="train")
 print(f"Training examples: {len(ds_tir)}")
 
+
 def format_for_sft(example):
     """Convert chat messages to model's template string."""
     text = tokenizer.apply_chat_template(
@@ -78,6 +99,7 @@ def format_for_sft(example):
         add_generation_prompt=False,
     )
     return {"text": text}
+
 
 ds_formatted = ds_tir.map(format_for_sft, num_proc=4)
 print(f"Formatted {len(ds_formatted)} examples")
@@ -101,8 +123,9 @@ sft_config = SFTConfig(
     max_seq_length=MAX_SEQ_LENGTH,
     dataset_text_field="text",
     packing=False,
-    padding_free=False,
     seed=42,
+    gradient_checkpointing=True,
+    gradient_checkpointing_kwargs={"use_reentrant": False},
 )
 
 trainer = SFTTrainer(
@@ -134,8 +157,8 @@ print(f"SFT COMPLETE!")
 print(f"Final loss: {stats.training_loss:.4f}")
 print(f"{'='*50}")
 
-# Save final checkpoint
+# Save final LoRA adapters
 model.save_pretrained(OUTPUT_DIR)
 tokenizer.save_pretrained(OUTPUT_DIR)
 print(f"Saved to {OUTPUT_DIR}/")
-print(f"\nNext: run grpo_train.py")
+print(f"\nNext: python grpo_train.py")
