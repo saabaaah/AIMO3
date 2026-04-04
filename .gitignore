@@ -62,3 +62,7 @@ logs/
 .cache/
 *.cache
 huggingface/
+
+.aimo3/
+data/
+datasets/
