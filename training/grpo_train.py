@@ -28,13 +28,13 @@ SFT_CHECKPOINT = "./sft_checkpoint"
 OUTPUT_DIR = "./grpo_checkpoint"
 BASE_MODEL = "Qwen/Qwen2.5-Math-7B-Instruct"
 MAX_SEQ_LENGTH = 2048
-NUM_GENERATIONS = 8
-MAX_COMPLETION = 1024
+NUM_GENERATIONS = 4
+MAX_COMPLETION = 768
 MAX_PROMPT = 512
-BATCH_SIZE = 2            # 1 × 2 × 4 = 8 divisible by NUM_GENERATIONS=8
-GRAD_ACCUM = 4
+BATCH_SIZE = 2            # 2 × 2 = 4 divisible by NUM_GENERATIONS=4
+GRAD_ACCUM = 2
 LEARNING_RATE = 5e-6
-NUM_EPOCHS = 3
+NUM_EPOCHS = 1
 SAVE_STEPS = 50
 LOGGING_STEPS = 1
 
@@ -42,7 +42,7 @@ LOGGING_STEPS = 1
 # GPU CHECK
 # ============================================
 print(f"GPU: {torch.cuda.get_device_name(0)}")
-print(f"VRAM: {torch.cuda.get_device_properties(0).total_mem / 1e9:.1f} GB")
+print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
 
 # ============================================
 # LOAD MODEL FROM SFT CHECKPOINT
@@ -64,8 +64,7 @@ base_model = AutoModelForCausalLM.from_pretrained(
     BASE_MODEL,
     quantization_config=bnb_config,
     device_map="auto",
-    torch_dtype=torch.bfloat16,
-    attn_implementation="flash_attention_2",
+    dtype=torch.bfloat16,
 )
 
 # Load LoRA adapters on top
@@ -165,7 +164,6 @@ grpo_config = GRPOConfig(
     output_dir=OUTPUT_DIR,
     num_generations=NUM_GENERATIONS,
     max_completion_length=MAX_COMPLETION,
-    max_prompt_length=MAX_PROMPT,
     per_device_train_batch_size=BATCH_SIZE,
     gradient_accumulation_steps=GRAD_ACCUM,
     learning_rate=LEARNING_RATE,

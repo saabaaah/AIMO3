@@ -1,0 +1,15 @@
+{
+  "id": "tantheta/aimo3-submission",
+  "title": "AIMO3 Submission - Qwen2.5-Math-7B SFT+GRPO",
+  "code_file": "kaggle_notebook.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": [],
+  "competition_sources": ["ai-mathematical-olympiad-progress-prize-3"],
+  "kernel_sources": [],
+  "model_sources": ["tantheta/aimo3-qwen-math-7b-sft-grpo/transformers/default/1"]
+}

@@ -29,7 +29,12 @@
       "Bash(mv:*)",
       "Bash(rm:*)",
       "Bash(find:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(pip show:*)",
+      "Bash(apt list:*)",
+      "Bash(sudo add-apt-repository:*)",
+      "Bash(sudo apt-get:*)",
+      "Bash(python3.11:*)"
     ]
   }
 }

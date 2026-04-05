@@ -26,10 +26,10 @@ from trl import SFTTrainer, SFTConfig
 MODEL_NAME = "Qwen/Qwen2.5-Math-7B-Instruct"
 OUTPUT_DIR = "./sft_checkpoint"
 MAX_SEQ_LENGTH = 2048
-BATCH_SIZE = 2
-GRAD_ACCUM = 8          # effective batch = 2 * 8 = 16
+BATCH_SIZE = 4
+GRAD_ACCUM = 4          # effective batch = 4 * 4 = 16
 LEARNING_RATE = 2e-4
-NUM_EPOCHS = 2
+NUM_EPOCHS = 1
 SAVE_STEPS = 500
 LOGGING_STEPS = 25
 
@@ -37,7 +37,7 @@ LOGGING_STEPS = 25
 # GPU CHECK
 # ============================================
 print(f"GPU: {torch.cuda.get_device_name(0)}")
-print(f"VRAM: {torch.cuda.get_device_properties(0).total_mem / 1e9:.1f} GB")
+print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
 
 # ============================================
 # LOAD MODEL in 4-bit + LoRA
@@ -55,8 +55,7 @@ model = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
     quantization_config=bnb_config,
     device_map="auto",
-    torch_dtype=torch.bfloat16,
-    attn_implementation="flash_attention_2",
+    dtype=torch.bfloat16,
 )
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
@@ -120,7 +119,6 @@ sft_config = SFTConfig(
     logging_steps=LOGGING_STEPS,
     save_steps=SAVE_STEPS,
     save_total_limit=2,
-    max_seq_length=MAX_SEQ_LENGTH,
     dataset_text_field="text",
     packing=False,
     seed=42,
@@ -130,7 +128,7 @@ sft_config = SFTConfig(
 
 trainer = SFTTrainer(
     model=model,
-    tokenizer=tokenizer,
+    processing_class=tokenizer,
     train_dataset=ds_formatted,
     args=sft_config,
 )

@@ -66,3 +66,15 @@ huggingface/
 .aimo3/
 data/
 datasets/
+py311_env/
+
+# Training artifacts
+training/sft_checkpoint/
+training/grpo_checkpoint/
+training/final_model/
+training/sft_final_model/
+training/unsloth_compiled_cache/
+*.log
+
+# Kaggle credentials
+kaggle.json
