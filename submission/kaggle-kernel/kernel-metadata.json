@@ -1,0 +1,13 @@
+{
+  "id": "tantheta/aimo3-r1-tir-submission",
+  "title": "AIMO3 R1-TIR Submission",
+  "code_file": "kaggle_r1_tir.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "competition_sources": ["ai-mathematical-olympiad-progress-prize-3"],
+  "dataset_sources": ["tantheta/r1-tir-merged"],
+  "keywords": ["aimo", "math", "r1", "deepseek"]
+}

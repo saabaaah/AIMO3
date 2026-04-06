@@ -34,7 +34,28 @@
       "Bash(apt list:*)",
       "Bash(sudo add-apt-repository:*)",
       "Bash(sudo apt-get:*)",
-      "Bash(python3.11:*)"
+      "Bash(python3.11:*)",
+      "Bash(lsb_release -a)",
+      "Bash(sudo -n true)",
+      "Bash(nvcc --version)",
+      "Bash(nvidia-smi:*)",
+      "Bash(cat /tmp/claude-1000/-home-ubuntu-AIMO3/*/tasks/byzuyfh24.output)",
+      "Bash(tail -3 /tmp/claude-1000/-home-ubuntu-AIMO3/*/tasks/b2cpxn0jo.output)",
+      "Bash(ps -o pid,pcpu,pmem,etime,cmd -p 77591)",
+      "Bash(timeout 20 tail -f /tmp/r1_32b_amc.log)",
+      "Bash(ps -o pid,etime,pcpu -p 77591)",
+      "Bash(ps -o pid,etime -p 77591)",
+      "Bash(cat /tmp/claude-1000/-home-ubuntu-AIMO3/*/tasks/bujlfnkz0.output)",
+      "Bash(cat /tmp/claude-1000/-home-ubuntu-AIMO3/*/tasks/b49n4kk22.output)",
+      "Bash(grep -vE \"^$\")",
+      "Bash(grep -vE \"^$|Loading checkpoint\")",
+      "Bash(fuser /dev/nvidia0)",
+      "Bash(mkdir -p ~/.config/kaggle)",
+      "Bash(cp /home/ubuntu/AIMO3/kaggle.json ~/.config/kaggle/kaggle.json)",
+      "Bash(chmod 600 ~/.config/kaggle/kaggle.json)",
+      "Bash(cat /tmp/claude-1000/-home-ubuntu-AIMO3/*/tasks/bpwlpbw7f.output)",
+      "Bash(du -sh /home/ubuntu/AIMO3/*/ /home/ubuntu/AIMO3/*.json)",
+      "Bash(du -sh /home/ubuntu/AIMO3/training/*/ /home/ubuntu/AIMO3/training/*.jsonl)"
     ]
   }
 }
