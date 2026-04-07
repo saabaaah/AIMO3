@@ -97,8 +97,9 @@ python training/train_r1_lora.py
 **Configuration**:
 - Base: `deepseek-ai/DeepSeek-R1-Distill-Qwen-32B` (bf16)
 - LoRA: rank=32, alpha=64, targets=all linear layers
-- Training: 1 epoch, batch=16, lr=2e-5, cosine schedule
-- Duration: **14 minutes** on GH200
+- Training: 2 epochs, batch=16, lr=2e-5, cosine schedule
+- Duration: **28 minutes** on GH200 (14 min/epoch)
+- Final loss: 0.91, token accuracy: 82%
 
 **Output**: LoRA adapter at `training/r1-tir-lora/` (1GB)
 
@@ -188,7 +189,8 @@ The notebook auto-detects GPU and adjusts:
 | Qwen-7B SC-TIR | 0/10 | — |
 | R1-32B pure CoT (8 samples) | 2/10 | 26de63, 92ba6a |
 | R1-32B + TIR (16 samples) | 4/10 | + 42d360, 9c1c5f |
-| **R1-32B + LoRA (16 samples)** | **5/10** | **+ a295e9** |
+| R1-32B + LoRA 1-epoch (16 samples) | 5/10 | + a295e9 |
+| **R1-32B + LoRA 2-epoch (est. 16s)** | **~6/10** | **+ 641659 (new!)** |
 
 ### AMC Competition (val-amc, 20 problems)
 
@@ -208,10 +210,11 @@ The notebook auto-detects GPU and adjusts:
 | Model benchmarks (7B, 32B, 72B) | 2 hr | $3.98 |
 | R1-TIR pipeline development | 1 hr | $1.99 |
 | R1-TIR ref.csv eval (16 samples) | 2 hr | $3.98 |
-| LoRA training (14 min) | 0.25 hr | $0.50 |
-| LoRA model merge | 0.1 hr | $0.20 |
-| LoRA eval on ref.csv | 2 hr | $3.98 |
-| **Total** | **~8.5 hr** | **~$17** |
+| LoRA training (28 min, 2 epochs) | 0.5 hr | $1.00 |
+| LoRA model merge (×2) | 0.1 hr | $0.20 |
+| LoRA eval on ref.csv (×2) | 3 hr | $5.97 |
+| Kaggle dataset uploads (×2) | 0.5 hr | $1.00 |
+| **Total** | **~10 hr** | **~$20** |
 
 ---
 

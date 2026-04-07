@@ -1,0 +1,14 @@
+{
+  "ownerSlug": "tantheta",
+  "modelSlug": "r1-distill-qwen-32b-tir-lora",
+  "instanceSlug": "peft-lora-r32",
+  "framework": "PyTorch",
+  "overview": "LoRA adapter (rank 32, alpha 64) for DeepSeek-R1-Distill-Qwen-32B. Trained on 10K NuminaMath-TIR examples for tool-integrated reasoning.",
+  "usage": "# Usage\n\nLoad with PEFT:\n```python\nfrom peft import PeftModel\nmodel = PeftModel.from_pretrained(base_model, 'tantheta/r1-distill-qwen-32b-tir-lora/peft-lora-r32/1')\nmodel = model.merge_and_unload()\n```",
+  "licenseName": "Apache 2.0",
+  "fineTunable": false,
+  "trainingData": ["AI-MO/NuminaMath-TIR"],
+  "modelInstanceType": "Unspecified",
+  "baseModelInstanceId": 0,
+  "externalBaseModelUrl": ""
+}

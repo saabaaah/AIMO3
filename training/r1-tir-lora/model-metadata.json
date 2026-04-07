@@ -1,0 +1,10 @@
+{
+  "ownerSlug": "tantheta",
+  "title": "R1 Distill Qwen 32B TIR LoRA",
+  "slug": "r1-distill-qwen-32b-tir-lora",
+  "subtitle": "DeepSeek-R1-Distill-Qwen-32B fine-tuned with LoRA on NuminaMath-TIR",
+  "isPrivate": true,
+  "description": "# R1-Distill-Qwen-32B + LoRA (TIR)\n\nLoRA adapter (rank 32) fine-tuned on 10K NuminaMath-TIR examples. Teaches code-integrated reasoning.\n\n## Usage\nMerge with base model: `PeftModel.from_pretrained(base, this_adapter).merge_and_unload()`\n\nOr use the pre-merged version: tantheta/r1-tir-merged (dataset)\n\n## Results\n5/10 on AIMO3 IMO-level reference problems",
+  "publishTime": "",
+  "provenanceSources": ""
+}

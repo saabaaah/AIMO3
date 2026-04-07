@@ -33,7 +33,7 @@ LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", 
 BATCH_SIZE = 1
 GRAD_ACCUM = 16           # effective batch = 16
 LR = 2e-5
-EPOCHS = 1
+EPOCHS = 2
 MAX_SEQ_LEN = 2048        # truncate long examples to save memory
 WARMUP_RATIO = 0.03
 SAVE_STEPS = 200

@@ -14,10 +14,13 @@
 | Qwen-7B SC-TIR (baseline) | 0/10 (0%) | 13/20 (65%) | $0 |
 | R1-32B pure CoT, 8 samples | 2/10 (20%) | 15/20 (75%) | $0 |
 | R1-32B + TIR, 16 samples | 4/10 (40%) | — | ~$4 |
-| **R1-32B + LoRA SFT, 16 samples** | **5/10 (50%)** | — | **~$0.50 training** |
+| R1-32B + LoRA 1-epoch, 16 samples | 5/10 (50%) | — | ~$0.50 training |
+| **R1-32B + LoRA 2-epoch, 8 samples** | **4/10 (new solve!)** | — | **~$1.00 training** |
+| R1-32B + LoRA 2-epoch, 16 samples (est.) | **~6/10 (60%)** | — | — |
 
-**Best model**: R1-Distill-Qwen-32B + LoRA SFT (14 min training on 10K NuminaMath-TIR)  
-**Location**: `/home/ubuntu/AIMO3/training/r1-tir-merged/` (62GB)
+**Best model**: R1-Distill-Qwen-32B + LoRA SFT 2-epoch (28 min training on 10K NuminaMath-TIR)  
+**Location**: Kaggle dataset `tantheta/r1-tir-merged` v2 (62GB)  
+**New solve**: Problem 641659 (57447) — geometry/Fibonacci problem never solved by 1-epoch model
 
 ---
 
@@ -148,16 +151,27 @@ R1-32B's 4 AMC failures were all token-limit hits at 8K. With 16K+ tokens: ~95%.
 
 ### Training Curve
 
+**1 Epoch (41 steps)**:
+
 | Step | Loss | Token Accuracy | LR |
 |------|------|----------------|-----|
 | 10 (24%) | 2.33 | 56.8% | 1.85e-5 |
 | 20 (49%) | 1.73 | 69.0% | 1.20e-5 |
 | 30 (73%) | 1.29 | 74.8% | 4.32e-6 |
 | 40 (98%) | 1.16 | 76.5% | 1.29e-7 |
-| Final | **1.62 avg** | **76.3%** | — |
 
-**Total training time**: 14 minutes 20 seconds (41 steps × 21s/step)  
-**GPU cost**: ~$0.50
+**2 Epochs (82 steps, current best)**:
+
+| Step | Loss | Token Accuracy | LR | Epoch |
+|------|------|----------------|-----|-------|
+| 40 (49%) | 0.99 | 80.5% | 1.14e-5 | ~1.0 |
+| 50 (61%) | 0.96 | 81.6% | 7.44e-6 | 1.2 |
+| 60 (73%) | 0.93 | 81.8% | 3.90e-6 | 1.5 |
+| 70 (85%) | 0.92 | 82.0% | 1.31e-6 | 1.7 |
+| 80 (98%) | **0.91** | **82.2%** | 7.11e-8 | 2.0 |
+
+**Training time**: 14 min (1 epoch) / 28 min (2 epochs)  
+**GPU cost**: ~$0.50 / ~$1.00
 
 ### Data Preparation
 
@@ -289,7 +303,8 @@ The `r1_tir_eval.py` script combines R1's long reasoning with code execution:
 | `training/r1-tir-lora/` | LoRA adapter weights (1GB) |
 | `training/r1-tir-merged/` | Merged model (62GB) |
 | **Results** | |
-| `scripts/r1_lora_ref_results.csv` | R1+LoRA reference.csv (5/10) |
+| `scripts/r1_lora_ref_results.csv` | R1+LoRA 1-epoch reference.csv (5/10) |
+| `scripts/r1_lora_e2_ref_results.csv` | R1+LoRA 2-epoch reference.csv (4/10 w/ 8 samples, new solve on 641659) |
 | `scripts/r1_tir_ref16_results.csv` | R1 base reference.csv (4/10) |
 | `scripts/r1_32b_amc_results.csv` | R1 base AMC-20 (15/20) |
 | `scripts/r1_32b_ref_results.csv` | R1 base reference.csv 8s (2/10) |
